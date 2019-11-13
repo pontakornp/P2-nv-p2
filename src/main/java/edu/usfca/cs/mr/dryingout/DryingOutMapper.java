@@ -78,9 +78,9 @@ extends Mapper<LongWritable, Text, Text, DryingOutWritable> {
                 LATITUDE_FLOAT == NcdcConstants.MISSING_DATA_1 ||
                 LONGITUDE_FLOAT == NcdcConstants.MISSING_DATA_2 ||
                 LATITUDE_FLOAT == NcdcConstants.MISSING_DATA_2) && WET_FLAG_INT == 0) {
-            String geoHash = Geohash.encode(LATITUDE_FLOAT, LONGITUDE_FLOAT, 4);
+            String geoHash = Geohash.encode(LATITUDE_FLOAT, LONGITUDE_FLOAT, 3);
             // Santa Babara
-            if (geoHash.equals("9q4g")) {
+            if (geoHash.equals("9qd")) {
                 String monthNum = UTC_DATE_STRING.substring(4, 6);
                 context.write(new Text(monthNum), dryingOutWritable);
             }
