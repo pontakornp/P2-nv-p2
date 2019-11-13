@@ -1,4 +1,4 @@
-package edu.usfca.cs.mr.extremes;
+package edu.usfca.cs.mr.solarwind;
 
 import edu.usfca.cs.mr.writables.ExtremesWritable;
 import org.apache.hadoop.io.DoubleWritable;
@@ -12,7 +12,7 @@ import java.io.IOException;
  * word, list<count> pairs.  Sums up individual counts per given word. Emits
  * <word, total count> pairs.
  */
-public class ExtremesReducer
+public class SolarWindReducer
 extends Reducer<Text, ExtremesWritable, Text, ExtremesWritable> {
 
     @Override

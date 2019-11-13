@@ -1,4 +1,4 @@
-package edu.usfca.cs.mr.extremes;
+package edu.usfca.cs.mr.climatechart;
 
 import edu.usfca.cs.mr.writables.ExtremesWritable;
 import org.apache.hadoop.conf.Configuration;
@@ -11,7 +11,7 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 /**
  * This is the main class. Hadoop will invoke the main method of this class.
  */
-public class ExtremesJob {
+public class ClimateChartJob {
     public static void main(String[] args) {
         try {
             Configuration conf = new Configuration();
@@ -20,10 +20,10 @@ public class ExtremesJob {
             Job job = Job.getInstance(conf, "extremes job");
 
             /* Current class */
-            job.setJarByClass(ExtremesJob.class);
+            job.setJarByClass(ClimateChartJob.class);
 
             /* Mapper class */
-            job.setMapperClass(ExtremesMapper.class);
+            job.setMapperClass(ClimateChartMapper.class);
             System.out.println("setMapperClass");
 
             /* Combiner class. Combiners are run between the Map and Reduce
@@ -36,7 +36,7 @@ public class ExtremesJob {
 //            job.setCombinerClass(ExtremesReducer.class);
 
             /* Reducer class */
-            job.setReducerClass(ExtremesReducer.class);
+            job.setReducerClass(ClimateChartReducer.class);
             System.out.println("setReducerClass");
 
             /* Outputs from the Mapper. */

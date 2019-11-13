@@ -1,4 +1,4 @@
-package edu.usfca.cs.mr.extremes;
+package edu.usfca.cs.mr.travelstartup;
 
 import edu.usfca.cs.mr.writables.ExtremesWritable;
 import edu.usfca.cs.mr.util.NcdcConstants;
@@ -40,7 +40,7 @@ import java.io.IOException;
  *    22   WIND_1_5                       m/s / DOUBLE
  *    23   WIND_FLAG                      X / INT
  */
-public class ExtremesMapper
+public class TravelStartupMapper
 extends Mapper<LongWritable, Text, Text, ExtremesWritable> {
     private ExtremesWritable extremesWritable = new ExtremesWritable();
 

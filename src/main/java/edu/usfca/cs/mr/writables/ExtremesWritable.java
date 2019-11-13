@@ -1,4 +1,4 @@
-package edu.usfca.cs.mr.util;
+package edu.usfca.cs.mr.writables;
 
 import org.apache.hadoop.io.*;
 import sun.misc.GC;

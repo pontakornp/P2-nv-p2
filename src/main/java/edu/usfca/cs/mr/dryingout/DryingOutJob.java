@@ -1,5 +1,6 @@
-package edu.usfca.cs.mr.extremes;
+package edu.usfca.cs.mr.dryingout;
 
+import edu.usfca.cs.mr.writables.DryingOutWritable;
 import edu.usfca.cs.mr.writables.ExtremesWritable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -11,19 +12,19 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 /**
  * This is the main class. Hadoop will invoke the main method of this class.
  */
-public class ExtremesJob {
+public class DryingOutJob {
     public static void main(String[] args) {
         try {
             Configuration conf = new Configuration();
 
             /* Job Name. You'll see this in the YARN webapp */
-            Job job = Job.getInstance(conf, "extremes job");
+            Job job = Job.getInstance(conf, "drying out job");
 
             /* Current class */
-            job.setJarByClass(ExtremesJob.class);
+            job.setJarByClass(DryingOutJob.class);
 
             /* Mapper class */
-            job.setMapperClass(ExtremesMapper.class);
+            job.setMapperClass(DryingOutMapper.class);
             System.out.println("setMapperClass");
 
             /* Combiner class. Combiners are run between the Map and Reduce
@@ -36,18 +37,18 @@ public class ExtremesJob {
 //            job.setCombinerClass(ExtremesReducer.class);
 
             /* Reducer class */
-            job.setReducerClass(ExtremesReducer.class);
+            job.setReducerClass(DyringOutReducer.class);
             System.out.println("setReducerClass");
 
             /* Outputs from the Mapper. */
             job.setMapOutputKeyClass(Text.class);
-            job.setMapOutputValueClass(ExtremesWritable.class);
-            System.out.println("output from mapper");
+            job.setMapOutputValueClass(DryingOutWritable.class);
+            System.out.println("set output from mapper");
 
             /* Outputs from the Reducer */
             job.setOutputKeyClass(Text.class);
-            job.setOutputValueClass(ExtremesWritable.class);
-            System.out.println("output from reducer");
+            job.setOutputValueClass(DryingOutWritable.class);
+            System.out.println("set output from reducer");
 
             /* Reduce tasks */
             job.setNumReduceTasks(1);
