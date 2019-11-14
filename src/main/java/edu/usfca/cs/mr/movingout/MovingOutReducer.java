@@ -1,7 +1,11 @@
 package edu.usfca.cs.mr.movingout;
 
+import edu.usfca.cs.mr.util.SanFranciscoWeather;
 import edu.usfca.cs.mr.writables.ExtremesWritable;
+import edu.usfca.cs.mr.writables.MovingOutWritable;
 import org.apache.hadoop.io.DoubleWritable;
+import org.apache.hadoop.io.FloatWritable;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
 
@@ -13,82 +17,78 @@ import java.io.IOException;
  * <word, total count> pairs.
  */
 public class MovingOutReducer
-extends Reducer<Text, ExtremesWritable, Text, ExtremesWritable> {
+extends Reducer<Text, MovingOutWritable, Text, IntWritable> {
 
     @Override
     protected void reduce(
-            Text key, Iterable<ExtremesWritable> values, Context context)
+            Text key, Iterable<MovingOutWritable> values, Context context)
     throws IOException, InterruptedException {
 
-        String tempKey = key.toString();
-        ExtremesWritable result = null;
-        int keyNum;
-        if (tempKey.equals("minAirTemp")) {
-            keyNum = 1;
-        } else if (tempKey.equals("maxAirTemp")) {
-            keyNum = 2;
-        } else if (tempKey.equals("minSurfaceTemp")) {
-            System.out.println("minSurfaceTemp Reducer");
-            keyNum = 3;
-        } else { // if (tempKey.equals("maxSurfaceTemp")) {
-            keyNum = 4;
-        }
-        double minTemp = Double.MAX_VALUE;
-        double maxTemp = Double.MIN_VALUE;
-        double airTemp;
-        double surfaceTemp;
-        for (ExtremesWritable val : values) {
-            airTemp = Double.parseDouble(val.getAIR_TEMPERATURE().toString());
-            surfaceTemp = Double.parseDouble(val.getSURFACE_TEMPERATURE().toString());
-            if (keyNum == 1 && minTemp > airTemp) {
-                result = new ExtremesWritable();
-                result.setUTC_DATE(new Text(val.getUTC_DATE()));
-                result.setUTC_TIME(new Text(val.getUTC_TIME()));
-                result.setLONGITUDE(new DoubleWritable(Double.parseDouble(val.getLONGITUDE().toString())));
-                result.setLATITUDE(new DoubleWritable(Double.parseDouble(val.getLATITUDE().toString())));
-                result.setAIR_TEMPERATURE(new DoubleWritable(Double.parseDouble(val.getAIR_TEMPERATURE().toString())));
-                result.setSURFACE_TEMPERATURE(new DoubleWritable(Double.parseDouble(val.getSURFACE_TEMPERATURE().toString())));
-                result.setAIR_TEMPERATURE(new DoubleWritable(airTemp));
-                minTemp = airTemp;
-            } else if (keyNum == 2 && maxTemp < airTemp) {
-                result = new ExtremesWritable();
-                result.setUTC_DATE(new Text(val.getUTC_DATE()));
-                result.setUTC_TIME(new Text(val.getUTC_TIME()));
-                result.setLONGITUDE(new DoubleWritable(Double.parseDouble(val.getLONGITUDE().toString())));
-                result.setLATITUDE(new DoubleWritable(Double.parseDouble(val.getLATITUDE().toString())));
-                result.setAIR_TEMPERATURE(new DoubleWritable(Double.parseDouble(val.getAIR_TEMPERATURE().toString())));
-                result.setSURFACE_TEMPERATURE(new DoubleWritable(Double.parseDouble(val.getSURFACE_TEMPERATURE().toString())));
-                maxTemp = airTemp;
+        double[] airTempArr = new double[12];
+        double[] precipitationArr = new double[12];
+        double[] humidityArr = new double[12];
 
-            } else if (keyNum == 3 && minTemp > surfaceTemp) {
-                result = new ExtremesWritable();
-                result.setUTC_DATE(new Text(val.getUTC_DATE()));
-                result.setUTC_TIME(new Text(val.getUTC_TIME()));
-                result.setLONGITUDE(new DoubleWritable(Double.parseDouble(val.getLONGITUDE().toString())));
-                result.setLATITUDE(new DoubleWritable(Double.parseDouble(val.getLATITUDE().toString())));
-                result.setAIR_TEMPERATURE(new DoubleWritable(Double.parseDouble(val.getAIR_TEMPERATURE().toString())));
-                result.setSURFACE_TEMPERATURE(new DoubleWritable(Double.parseDouble(val.getSURFACE_TEMPERATURE().toString())));
-                minTemp = surfaceTemp;
-            } else if (keyNum == 4 && maxTemp < surfaceTemp) {
-                result = new ExtremesWritable();
-                result.setUTC_DATE(new Text(val.getUTC_DATE()));
-                result.setUTC_TIME(new Text(val.getUTC_TIME()));
-                result.setLONGITUDE(new DoubleWritable(Double.parseDouble(val.getLONGITUDE().toString())));
-                result.setLATITUDE(new DoubleWritable(Double.parseDouble(val.getLATITUDE().toString())));
-                result.setAIR_TEMPERATURE(new DoubleWritable(Double.parseDouble(val.getAIR_TEMPERATURE().toString())));
-                result.setSURFACE_TEMPERATURE(new DoubleWritable(Double.parseDouble(val.getSURFACE_TEMPERATURE().toString())));
-                result.setSURFACE_TEMPERATURE(new DoubleWritable(surfaceTemp));
-                maxTemp = surfaceTemp;
+        int[] monthCount = new int[12];
+        for (MovingOutWritable val : values) {
+            String localDate = val.getLST_DATE().toString();
+            double airTemp = Double.parseDouble(val.getAIR_TEMPERATURE().toString());
+            double precipitation = Double.parseDouble(val.getPRECIPITATION().toString());
+            double humidity = Double.parseDouble(val.getRELATIVE_HUMIDITY().toString());
+            int monthNum = Integer.parseInt(localDate.substring(4, 6));
+            int monthNumIndex = monthNum - 1;
+            airTempArr[monthNumIndex] += airTemp;
+            precipitationArr[monthNumIndex] += precipitation;
+            humidityArr[monthNumIndex] += humidity;
+            monthCount[monthNumIndex]++;
+        }
+        int count = 0;
+        for (int i = 0; i < 12; i++) {
+            double sfAirTemp = SanFranciscoWeather.SF_AIR_TEMPERATURE[i];
+            double sfPrecipitation = SanFranciscoWeather.SF_PRECIPITATION[i];
+            double sfHumidity = SanFranciscoWeather.SF_RELATIVE_HUMIDITY[i];
+
+            if (monthCount[i] > 0) {
+                double airTemp = airTempArr[i] / monthCount[i];
+                double precipitation = precipitationArr[i] / monthCount[i];
+                double humidity = humidityArr[i] / monthCount[i];
+                System.out.println("-------------------");
+                System.out.println(airTemp);
+                System.out.println(sfAirTemp);
+                System.out.println();
+                System.out.println(precipitation);
+                System.out.println(sfPrecipitation);
+                System.out.println();
+                System.out.println(humidity);
+                System.out.println(sfHumidity);
+                System.out.println("-------------------");
+                if (((sfAirTemp - 5 <= airTemp) && (airTemp <= sfAirTemp + 5)) &&
+                        (precipitation <= sfPrecipitation) &&
+                        ((sfHumidity - 15 <= humidity) && (humidity <= sfHumidity + 15))) {
+                    System.out.println();
+                    System.out.println();
+                    System.out.println();
+                    System.out.println("Current Count: " + count);
+                    System.out.println();
+                    System.out.println();
+                    System.out.println();
+                    count++;
+                }
             }
         }
-
-        if (result != null) {
-            System.out.println("-----------------");
-            System.out.print(key.toString());
-            System.out.println(result.getAIR_TEMPERATURE());
-            System.out.println(result.getSURFACE_TEMPERATURE());
-            System.out.println("-----------------");
-            context.write(key, result);
+        System.out.println();
+        System.out.println();
+        System.out.println();
+        System.out.println("Total Count: " + count);
+        System.out.println();
+        System.out.println();
+        System.out.println();
+        if (count >= 6) {
+            System.out.println("-----");
+            System.out.println(key.toString());
+            System.out.println(count);
+            System.out.println("-----");
+            context.write(key, new IntWritable(count));
         }
+
     }
 }

@@ -1,8 +1,10 @@
 package edu.usfca.cs.mr.movingout;
 
 import edu.usfca.cs.mr.writables.ExtremesWritable;
+import edu.usfca.cs.mr.writables.MovingOutWritable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
@@ -17,7 +19,7 @@ public class MovingOutJob {
             Configuration conf = new Configuration();
 
             /* Job Name. You'll see this in the YARN webapp */
-            Job job = Job.getInstance(conf, "extremes job");
+            Job job = Job.getInstance(conf, "moving out job");
 
             /* Current class */
             job.setJarByClass(MovingOutJob.class);
@@ -33,7 +35,7 @@ public class MovingOutJob {
              * combiner is disabled here, but the following can be uncommented
              * for this particular job:
              */
-//            job.setCombinerClass(ExtremesReducer.class);
+//            job.setCombinerClass(MovingOutReducer.class);
 
             /* Reducer class */
             job.setReducerClass(MovingOutReducer.class);
@@ -41,12 +43,12 @@ public class MovingOutJob {
 
             /* Outputs from the Mapper. */
             job.setMapOutputKeyClass(Text.class);
-            job.setMapOutputValueClass(ExtremesWritable.class);
+            job.setMapOutputValueClass(MovingOutWritable.class);
             System.out.println("output from mapper");
 
             /* Outputs from the Reducer */
             job.setOutputKeyClass(Text.class);
-            job.setOutputValueClass(ExtremesWritable.class);
+            job.setOutputValueClass(IntWritable.class);
             System.out.println("output from reducer");
 
             /* Reduce tasks */
