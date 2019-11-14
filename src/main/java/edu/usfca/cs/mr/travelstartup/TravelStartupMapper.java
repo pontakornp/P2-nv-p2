@@ -62,6 +62,10 @@ extends Mapper<LongWritable, Text, Text, ExtremesWritable> {
         // split line into string array
         String[] fields = value.toString().split("\\s+");
 
+
+        // Comfort Index: (temperature + relative humidity)/40
+        // result should range from 0 - 10
+
         String UTC_DATE_STRING = fields[NcdcConstants.UTC_DATE_INDEX];
         String UTC_TIME_STRING = fields[NcdcConstants.UTC_TIME_INDEX];
         double LONGITUDE_DOUBLE = Double.parseDouble(fields[NcdcConstants.LONGITUDE_INDEX]);
