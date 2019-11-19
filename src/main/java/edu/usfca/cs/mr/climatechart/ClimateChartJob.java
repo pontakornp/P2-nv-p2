@@ -1,12 +1,12 @@
 package edu.usfca.cs.mr.climatechart;
-
-import edu.usfca.cs.mr.writables.ExtremesWritable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+
+import edu.usfca.cs.mr.writables.ClimateChartWritable;
 
 /**
  * This is the main class. Hadoop will invoke the main method of this class.
@@ -15,9 +15,10 @@ public class ClimateChartJob {
     public static void main(String[] args) {
         try {
             Configuration conf = new Configuration();
+            conf.set("GEOHASH", args[2]);
 
             /* Job Name. You'll see this in the YARN webapp */
-            Job job = Job.getInstance(conf, "extremes job");
+            Job job = Job.getInstance(conf, "climate chart job");
 
             /* Current class */
             job.setJarByClass(ClimateChartJob.class);
@@ -41,12 +42,12 @@ public class ClimateChartJob {
 
             /* Outputs from the Mapper. */
             job.setMapOutputKeyClass(Text.class);
-            job.setMapOutputValueClass(ExtremesWritable.class);
+            job.setMapOutputValueClass(ClimateChartWritable.class);
             System.out.println("output from mapper");
 
             /* Outputs from the Reducer */
             job.setOutputKeyClass(Text.class);
-            job.setOutputValueClass(ExtremesWritable.class);
+            job.setOutputValueClass(ClimateChartWritable.class);
             System.out.println("output from reducer");
 
             /* Reduce tasks */
@@ -58,6 +59,8 @@ public class ClimateChartJob {
             /* Job output path in HDFS. NOTE: if the output path already exists
              * and you try to create it, the job will fail. You may want to
              * automate the creation of new output directories here */
+            
+            
             FileOutputFormat.setOutputPath(job, new Path(args[1]));
 
             /* Wait (block) for the job to complete... */
