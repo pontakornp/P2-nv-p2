@@ -191,10 +191,8 @@ public class SolarWindWritable implements Writable {
 
 	@Override
 	public String toString() {
-		return "SolarWindWritable [UTC_DATE=" + UTC_DATE + ", UTC_TIME=" + UTC_TIME + ", LONGITUDE=" + LONGITUDE
-				+ ", LATITUDE=" + LATITUDE + ", AIR_TEMPERATURE=" + AIR_TEMPERATURE + ", PRECIPITATION=" + PRECIPITATION
-				+ ", SOLAR_RADIATION=" + SOLAR_RADIATION + ", SR_FLAG=" + SR_FLAG + ", WIND_1_5=" + WIND_1_5
-				+ ", WIND_FLAG=" + WIND_FLAG + ", GEOHASH=" + GEOHASH + "]";
+		return  AIR_TEMPERATURE + " " + PRECIPITATION
+				+ "	" + SOLAR_RADIATION + " " + WIND_1_5;
 	}
     
 }

@@ -1,14 +1,17 @@
 package edu.usfca.cs.mr.climatechart;
 
-import edu.usfca.cs.mr.writables.ExtremesWritable;
-import edu.usfca.cs.mr.util.NcdcConstants;
-import org.apache.hadoop.io.DoubleWritable;
-import org.apache.hadoop.io.IntWritable;
+import java.io.IOException;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 
-import java.io.IOException;
+import edu.usfca.cs.mr.util.Coordinates;
+import edu.usfca.cs.mr.util.Geohash;
+import edu.usfca.cs.mr.util.NcdcConstants;
+import edu.usfca.cs.mr.writables.ClimateChartWritable;
 
 /**
  * Mapper: Reads line by line, split them into words. Emit <word, 1> pairs.
@@ -41,83 +44,48 @@ import java.io.IOException;
  *    23   WIND_FLAG                      X / INT
  */
 public class ClimateChartMapper
-extends Mapper<LongWritable, Text, Text, ExtremesWritable> {
-    private ExtremesWritable extremesWritable = new ExtremesWritable();
-
+extends Mapper<LongWritable, Text, Text, ClimateChartWritable> {
+    private ClimateChartWritable ClimateChartWritable = new ClimateChartWritable();
+    
+    private Text GEOHASH = new Text();
     private Text UTC_DATE = new Text();
-    private Text UTC_TIME = new Text();
-    private DoubleWritable LONGITUDE = new DoubleWritable();
-    private DoubleWritable LATITUDE = new DoubleWritable();
-    private DoubleWritable AIR_TEMPERATURE = new DoubleWritable();
-    private DoubleWritable SURFACE_TEMPERATURE = new DoubleWritable();
-
-    private double minAirTemp = Double.MAX_VALUE;
-    private double maxAirTemp = Double.MIN_VALUE;
-    private double minSurfaceTemp = Double.MAX_VALUE;
-    private double maxSurfaceTemp = Double.MIN_VALUE;
-
+    private FloatWritable AIR_TEMPERATURE = new FloatWritable();
+    private FloatWritable PRECIPITATION = new FloatWritable();
+    private static final int GEOHASH_PRECISION = 4;
+    
     @Override
     protected void map(LongWritable key, Text value, Context context)
         throws IOException, InterruptedException {
         // split line into string array
         String[] fields = value.toString().split("\\s+");
+        
+        Configuration conf = context.getConfiguration();
+        String GEOHASH_PARAM = conf.get("GEOHASH");
+        System.out.println(GEOHASH_PARAM);
 
         String UTC_DATE_STRING = fields[NcdcConstants.UTC_DATE_INDEX];
-        String UTC_TIME_STRING = fields[NcdcConstants.UTC_TIME_INDEX];
-        double LONGITUDE_DOUBLE = Double.parseDouble(fields[NcdcConstants.LONGITUDE_INDEX]);
-        double LATITUDE_DOUBLE = Double.parseDouble(fields[NcdcConstants.LATITUDE_INDEX]);
-        double AIR_TEMPERATURE_DOUBLE = Double.parseDouble(fields[NcdcConstants.AIR_TEMPERATURE_INDEX]);
-        double SURFACE_TEMPERATURE_DOUBLE = Double.parseDouble(fields[NcdcConstants.SURFACE_TEMPERATURE_INDEX]);
-
+        String UTC_MONTH_STRING = UTC_DATE_STRING.substring(4, 6);
+        float LONGITUDE_DOUBLE = Float.parseFloat(fields[NcdcConstants.LONGITUDE_INDEX]);
+        float LATITUDE_DOUBLE = Float.parseFloat(fields[NcdcConstants.LATITUDE_INDEX]);
+        float AIR_TEMPERATURE_DOUBLE = Float.parseFloat(fields[NcdcConstants.AIR_TEMPERATURE_INDEX]);
+        float PRECIPITATION_DOUBLE = Float.parseFloat(fields[NcdcConstants.PRECIPITATION_INDEX]);
+        
+        Coordinates COORDINATES = new Coordinates(LATITUDE_DOUBLE, LONGITUDE_DOUBLE);
+    	String GEOHASH_STRING = Geohash.encode(COORDINATES, GEOHASH_PRECISION);
+        
+        GEOHASH.set(GEOHASH_STRING);
         UTC_DATE.set(UTC_DATE_STRING);
-        UTC_TIME.set(UTC_TIME_STRING);
-        LONGITUDE.set(LONGITUDE_DOUBLE);
-        LATITUDE.set(LATITUDE_DOUBLE);
         AIR_TEMPERATURE.set(AIR_TEMPERATURE_DOUBLE);
-        SURFACE_TEMPERATURE.set(SURFACE_TEMPERATURE_DOUBLE);
-
-        extremesWritable.set(UTC_DATE, UTC_TIME, LONGITUDE, LATITUDE, AIR_TEMPERATURE, SURFACE_TEMPERATURE);
+        PRECIPITATION.set(PRECIPITATION_DOUBLE);
+        
+        ClimateChartWritable.set(GEOHASH, UTC_DATE, AIR_TEMPERATURE, PRECIPITATION);
+        
         if (!(LONGITUDE_DOUBLE == NcdcConstants.MISSING_DATA_1 ||
-                LATITUDE_DOUBLE == NcdcConstants.MISSING_DATA_1 ||
-                AIR_TEMPERATURE_DOUBLE == NcdcConstants.MISSING_DATA_1 ||
-                SURFACE_TEMPERATURE_DOUBLE == NcdcConstants.MISSING_DATA_1 ||
+                LATITUDE_DOUBLE == NcdcConstants.MISSING_DATA_1 || 
                 LONGITUDE_DOUBLE == NcdcConstants.MISSING_DATA_2 ||
-                LATITUDE_DOUBLE == NcdcConstants.MISSING_DATA_2 ||
-                AIR_TEMPERATURE_DOUBLE == NcdcConstants.MISSING_DATA_2 ||
-                SURFACE_TEMPERATURE_DOUBLE == NcdcConstants.MISSING_DATA_2)) {
-            if (minAirTemp > AIR_TEMPERATURE_DOUBLE) {
-//                System.out.println("1 minAirTemp Mapper");
-
-                context.write(new Text("minAirTemp"), extremesWritable);
-                minAirTemp = AIR_TEMPERATURE_DOUBLE;
-            }
-
-            if (maxAirTemp < AIR_TEMPERATURE_DOUBLE) {
-//                System.out.println("2 maxAirTemp Mapper");
-
-                context.write(new Text("maxAirTemp"), extremesWritable);
-                maxAirTemp = AIR_TEMPERATURE_DOUBLE;
-            }
-
-            if (minSurfaceTemp > SURFACE_TEMPERATURE_DOUBLE) {
-
-//                System.out.println("3 minSurfaceTemp Mapper");
-
-                context.write(new Text("minSurfaceTemp"), extremesWritable);
-                minSurfaceTemp = SURFACE_TEMPERATURE_DOUBLE;
-            }
-
-            if (maxSurfaceTemp < SURFACE_TEMPERATURE_DOUBLE) {
-                if (SURFACE_TEMPERATURE_DOUBLE > 50) {
-                    System.out.println(SURFACE_TEMPERATURE_DOUBLE);
-                }
-//                System.out.println("4 maxSurfaceTemp Mapper");
-
-                context.write(new Text("maxSurfaceTemp"), extremesWritable);
-                maxSurfaceTemp = SURFACE_TEMPERATURE_DOUBLE;
-
-            }
-
+                LATITUDE_DOUBLE == NcdcConstants.MISSING_DATA_2) && 
+        		GEOHASH_PARAM.equals(GEOHASH_STRING)){
+        	context.write(new Text(UTC_MONTH_STRING), ClimateChartWritable);
         }
     }
 }
