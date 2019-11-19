@@ -23,7 +23,7 @@ extends Reducer<Text, MovingOutWritable, Text, IntWritable> {
     protected void reduce(
             Text key, Iterable<MovingOutWritable> values, Context context)
     throws IOException, InterruptedException {
-        
+
         double[] airTempArr = new double[12];
         double[] precipitationArr = new double[12];
         double[] humidityArr = new double[12];

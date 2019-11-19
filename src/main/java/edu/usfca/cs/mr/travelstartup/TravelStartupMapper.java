@@ -81,11 +81,11 @@ extends Mapper<LongWritable, Text, IntWritable, TravelStartupWritable> {
                 LATITUDE_FLOAT == NcdcConstants.MISSING_DATA_2 ||
                 AIR_TEMPERATURE_DOUBLE == NcdcConstants.MISSING_DATA_2 ||
                 RELATIVE_HUMIDITY_DOUBLE == NcdcConstants.MISSING_DATA_2)) {
-            String geoHash = Geohash.encode(LONGITUDE_FLOAT, LATITUDE_FLOAT, 4);
+            String geoHash = Geohash.encode(LATITUDE_FLOAT, LONGITUDE_FLOAT, 4);
             Set<String> pickedGeoHash = new HashSet<>();
-            pickedGeoHash.add("8e3");
-            pickedGeoHash.add("q4g");
-            pickedGeoHash.add("xhg");
+            pickedGeoHash.add("8e3r");
+            pickedGeoHash.add("9q4g");
+            pickedGeoHash.add("9xhg");
             pickedGeoHash.add("dhw5");
             pickedGeoHash.add("dp15");
             if (pickedGeoHash.contains(geoHash)) {
