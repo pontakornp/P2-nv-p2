@@ -1,12 +1,12 @@
 package edu.usfca.cs.mr.writables;
 
-import org.apache.hadoop.io.*;
-import sun.misc.GC;
-import sun.util.locale.LanguageTag;
-
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+
+import org.apache.hadoop.io.DoubleWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.Writable;
 
 public class ExtremesWritable implements Writable {
     private Text UTC_DATE;

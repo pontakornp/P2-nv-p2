@@ -1,14 +1,17 @@
 package edu.usfca.cs.mr.solarwind;
 
-import edu.usfca.cs.mr.writables.ExtremesWritable;
-import edu.usfca.cs.mr.util.NcdcConstants;
-import org.apache.hadoop.io.DoubleWritable;
+import java.io.IOException;
+
+import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 
-import java.io.IOException;
+import edu.usfca.cs.mr.util.Coordinates;
+import edu.usfca.cs.mr.util.Geohash;
+import edu.usfca.cs.mr.util.NcdcConstants;
+import edu.usfca.cs.mr.writables.SolarWindWritable;
 
 /**
  * Mapper: Reads line by line, split them into words. Emit <word, 1> pairs.
@@ -41,21 +44,21 @@ import java.io.IOException;
  *    23   WIND_FLAG                      X / INT
  */
 public class SolarWindMapper
-extends Mapper<LongWritable, Text, Text, ExtremesWritable> {
-    private ExtremesWritable extremesWritable = new ExtremesWritable();
-
+extends Mapper<LongWritable, Text, Text, SolarWindWritable> {
+    private SolarWindWritable solarWindWritable = new SolarWindWritable();
+    
     private Text UTC_DATE = new Text();
     private Text UTC_TIME = new Text();
-    private DoubleWritable LONGITUDE = new DoubleWritable();
-    private DoubleWritable LATITUDE = new DoubleWritable();
-    private DoubleWritable AIR_TEMPERATURE = new DoubleWritable();
-    private DoubleWritable SURFACE_TEMPERATURE = new DoubleWritable();
-
-    private double minAirTemp = Double.MAX_VALUE;
-    private double maxAirTemp = Double.MIN_VALUE;
-    private double minSurfaceTemp = Double.MAX_VALUE;
-    private double maxSurfaceTemp = Double.MIN_VALUE;
-
+    private FloatWritable LONGITUDE = new FloatWritable();
+    private FloatWritable LATITUDE = new FloatWritable();
+    private FloatWritable AIR_TEMPERATURE = new FloatWritable();
+    private FloatWritable PRECIPITATION = new FloatWritable();
+    private FloatWritable SOLAR_RADIATION = new FloatWritable();
+    private IntWritable SR_FLAG =  new IntWritable();
+    private FloatWritable WIND_1_5 = new FloatWritable();
+    private IntWritable WIND_FLAG = new IntWritable();
+    private static final int GEOHASH_PRECISION = 4;
+    
     @Override
     protected void map(LongWritable key, Text value, Context context)
         throws IOException, InterruptedException {
@@ -64,60 +67,38 @@ extends Mapper<LongWritable, Text, Text, ExtremesWritable> {
 
         String UTC_DATE_STRING = fields[NcdcConstants.UTC_DATE_INDEX];
         String UTC_TIME_STRING = fields[NcdcConstants.UTC_TIME_INDEX];
-        double LONGITUDE_DOUBLE = Double.parseDouble(fields[NcdcConstants.LONGITUDE_INDEX]);
-        double LATITUDE_DOUBLE = Double.parseDouble(fields[NcdcConstants.LATITUDE_INDEX]);
-        double AIR_TEMPERATURE_DOUBLE = Double.parseDouble(fields[NcdcConstants.AIR_TEMPERATURE_INDEX]);
-        double SURFACE_TEMPERATURE_DOUBLE = Double.parseDouble(fields[NcdcConstants.SURFACE_TEMPERATURE_INDEX]);
-
+        float LONGITUDE_DOUBLE = Float.parseFloat(fields[NcdcConstants.LONGITUDE_INDEX]);
+        float LATITUDE_DOUBLE = Float.parseFloat(fields[NcdcConstants.LATITUDE_INDEX]);
+        float AIR_TEMPERATURE_DOUBLE = Float.parseFloat(fields[NcdcConstants.AIR_TEMPERATURE_INDEX]);
+        float PRECIPITATION_DOUBLE = Float.parseFloat(fields[NcdcConstants.PRECIPITATION_INDEX]);
+        float SOLAR_RADIATION_DOUBLE = Float.parseFloat(fields[NcdcConstants.SOLAR_RADIATION_INDEX]);
+        int  SR_FLAG_INT = Integer.parseInt(fields[NcdcConstants.SR_FLAG_INDEX]);
+        float  WIND_1_5_DOUBLE = Float.parseFloat(fields[NcdcConstants.WIND_1_5_INDEX]);
+        int WIND_FLAG_INT = Integer.parseInt(fields[NcdcConstants.WIND_FLAG_INDEX]);
+        
+        
         UTC_DATE.set(UTC_DATE_STRING);
         UTC_TIME.set(UTC_TIME_STRING);
         LONGITUDE.set(LONGITUDE_DOUBLE);
         LATITUDE.set(LATITUDE_DOUBLE);
         AIR_TEMPERATURE.set(AIR_TEMPERATURE_DOUBLE);
-        SURFACE_TEMPERATURE.set(SURFACE_TEMPERATURE_DOUBLE);
-
-        extremesWritable.set(UTC_DATE, UTC_TIME, LONGITUDE, LATITUDE, AIR_TEMPERATURE, SURFACE_TEMPERATURE);
+        PRECIPITATION.set(PRECIPITATION_DOUBLE);
+        SOLAR_RADIATION.set(SOLAR_RADIATION_DOUBLE);
+        SR_FLAG.set(SR_FLAG_INT);
+        WIND_1_5.set(WIND_1_5_DOUBLE);
+        WIND_FLAG.set(WIND_FLAG_INT);
+        
+        solarWindWritable.set(UTC_DATE, UTC_TIME, LONGITUDE, LATITUDE, AIR_TEMPERATURE, 
+        		PRECIPITATION, SOLAR_RADIATION, SR_FLAG, WIND_1_5, WIND_FLAG);
+        
         if (!(LONGITUDE_DOUBLE == NcdcConstants.MISSING_DATA_1 ||
-                LATITUDE_DOUBLE == NcdcConstants.MISSING_DATA_1 ||
-                AIR_TEMPERATURE_DOUBLE == NcdcConstants.MISSING_DATA_1 ||
-                SURFACE_TEMPERATURE_DOUBLE == NcdcConstants.MISSING_DATA_1 ||
+                LATITUDE_DOUBLE == NcdcConstants.MISSING_DATA_1 || 
                 LONGITUDE_DOUBLE == NcdcConstants.MISSING_DATA_2 ||
-                LATITUDE_DOUBLE == NcdcConstants.MISSING_DATA_2 ||
-                AIR_TEMPERATURE_DOUBLE == NcdcConstants.MISSING_DATA_2 ||
-                SURFACE_TEMPERATURE_DOUBLE == NcdcConstants.MISSING_DATA_2)) {
-            if (minAirTemp > AIR_TEMPERATURE_DOUBLE) {
-//                System.out.println("1 minAirTemp Mapper");
-
-                context.write(new Text("minAirTemp"), extremesWritable);
-                minAirTemp = AIR_TEMPERATURE_DOUBLE;
-            }
-
-            if (maxAirTemp < AIR_TEMPERATURE_DOUBLE) {
-//                System.out.println("2 maxAirTemp Mapper");
-
-                context.write(new Text("maxAirTemp"), extremesWritable);
-                maxAirTemp = AIR_TEMPERATURE_DOUBLE;
-            }
-
-            if (minSurfaceTemp > SURFACE_TEMPERATURE_DOUBLE) {
-
-//                System.out.println("3 minSurfaceTemp Mapper");
-
-                context.write(new Text("minSurfaceTemp"), extremesWritable);
-                minSurfaceTemp = SURFACE_TEMPERATURE_DOUBLE;
-            }
-
-            if (maxSurfaceTemp < SURFACE_TEMPERATURE_DOUBLE) {
-                if (SURFACE_TEMPERATURE_DOUBLE > 50) {
-                    System.out.println(SURFACE_TEMPERATURE_DOUBLE);
-                }
-//                System.out.println("4 maxSurfaceTemp Mapper");
-
-                context.write(new Text("maxSurfaceTemp"), extremesWritable);
-                maxSurfaceTemp = SURFACE_TEMPERATURE_DOUBLE;
-
-            }
-
+                LATITUDE_DOUBLE == NcdcConstants.MISSING_DATA_2)){
+        	
+        	Coordinates coordinates = new Coordinates(LATITUDE_DOUBLE, LONGITUDE_DOUBLE);
+        	String geoHash = Geohash.encode(coordinates, GEOHASH_PRECISION);
+        	context.write(new Text(geoHash), solarWindWritable);
         }
     }
 }

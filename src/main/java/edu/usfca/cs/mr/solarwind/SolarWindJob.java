@@ -1,12 +1,13 @@
 package edu.usfca.cs.mr.solarwind;
 
-import edu.usfca.cs.mr.writables.ExtremesWritable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+
+import edu.usfca.cs.mr.writables.SolarWindWritable;
 
 /**
  * This is the main class. Hadoop will invoke the main method of this class.
@@ -17,7 +18,7 @@ public class SolarWindJob {
             Configuration conf = new Configuration();
 
             /* Job Name. You'll see this in the YARN webapp */
-            Job job = Job.getInstance(conf, "extremes job");
+            Job job = Job.getInstance(conf, "solar wind job");
 
             /* Current class */
             job.setJarByClass(SolarWindJob.class);
@@ -41,12 +42,12 @@ public class SolarWindJob {
 
             /* Outputs from the Mapper. */
             job.setMapOutputKeyClass(Text.class);
-            job.setMapOutputValueClass(ExtremesWritable.class);
+            job.setMapOutputValueClass(SolarWindWritable.class);
             System.out.println("output from mapper");
 
             /* Outputs from the Reducer */
             job.setOutputKeyClass(Text.class);
-            job.setOutputValueClass(ExtremesWritable.class);
+            job.setOutputValueClass(SolarWindWritable.class);
             System.out.println("output from reducer");
 
             /* Reduce tasks */

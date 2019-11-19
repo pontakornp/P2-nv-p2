@@ -1,10 +1,5 @@
 package edu.usfca.cs.mr.util;
 
-import org.apache.hadoop.io.DoubleWritable;
-import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.Text;
-
-
 //    private Text WBANNO;
 //    private Text UTC_DATE;
 //    private Text UTC_TIME;
@@ -56,5 +51,6 @@ public class NcdcConstants {
 
     public static final double MISSING_DATA_1 = -9999.0;
     public static final double MISSING_DATA_2 = -99.000;
+    public static final double MISSING_DATA_3 = -99999.0;
 
 }
