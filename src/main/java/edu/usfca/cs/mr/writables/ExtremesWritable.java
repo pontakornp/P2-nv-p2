@@ -65,14 +65,7 @@ public class ExtremesWritable implements Writable {
 
     @Override
     public String toString() {
-        return "ExtremesWritable{" +
-                "UTC_DATE=" + UTC_DATE +
-                ", UTC_TIME=" + UTC_TIME +
-                ", LONGITUDE=" + LONGITUDE +
-                ", LATITUDE=" + LATITUDE +
-                ", AIR_TEMPERATURE=" + AIR_TEMPERATURE +
-                ", SURFACE_TEMPERATURE=" + SURFACE_TEMPERATURE +
-                '}';
+        return UTC_DATE + ", " + UTC_TIME  + ", " + LONGITUDE + ", " + LATITUDE + ", " + AIR_TEMPERATURE + ", " + SURFACE_TEMPERATURE;
     }
 
     public Text getUTC_DATE() {

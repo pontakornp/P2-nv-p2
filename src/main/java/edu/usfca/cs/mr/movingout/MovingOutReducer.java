@@ -51,44 +51,15 @@ extends Reducer<Text, MovingOutWritable, Text, IntWritable> {
                 double airTemp = airTempArr[i] / monthCount[i];
                 double precipitation = precipitationArr[i] / monthCount[i];
                 double humidity = humidityArr[i] / monthCount[i];
-                System.out.println("-------------------");
-                System.out.println(airTemp);
-                System.out.println(sfAirTemp);
-                System.out.println();
-                System.out.println(precipitation);
-                System.out.println(sfPrecipitation);
-                System.out.println();
-                System.out.println(humidity);
-                System.out.println(sfHumidity);
-                System.out.println("-------------------");
                 if (((sfAirTemp - 5 <= airTemp) && (airTemp <= sfAirTemp + 5)) &&
                         (precipitation <= sfPrecipitation) &&
                         ((sfHumidity - 15 <= humidity) && (humidity <= sfHumidity + 15))) {
-                    System.out.println();
-                    System.out.println();
-                    System.out.println();
-                    System.out.println("Current Count: " + count);
-                    System.out.println();
-                    System.out.println();
-                    System.out.println();
                     count++;
                 }
             }
         }
-        System.out.println();
-        System.out.println();
-        System.out.println();
-        System.out.println("Total Count: " + count);
-        System.out.println();
-        System.out.println();
-        System.out.println();
-        if (count >= 6) {
-            System.out.println("-----");
-            System.out.println(key.toString());
-            System.out.println(count);
-            System.out.println("-----");
+        if (count >= 5) {
             context.write(key, new IntWritable(count));
         }
-
     }
 }

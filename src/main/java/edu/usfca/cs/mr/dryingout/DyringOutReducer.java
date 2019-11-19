@@ -28,7 +28,7 @@ extends Reducer<Text, DryingOutWritable, Text, DryingOutWritable> {
             totalWetness += Float.parseFloat(val.getWETNESS().toString());
             count += 1;
         }
-        float avgWetness = totalWetness /= count;
+        float avgWetness = totalWetness / count;
         DryingOutWritable result = new DryingOutWritable();
         result.setWETNESS(new FloatWritable(avgWetness));
         context.write(key, result);

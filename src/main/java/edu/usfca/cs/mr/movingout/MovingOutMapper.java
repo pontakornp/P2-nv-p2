@@ -8,6 +8,8 @@ import org.apache.hadoop.io.*;
 import org.apache.hadoop.mapreduce.Mapper;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Mapper: Reads line by line, split them into words. Emit <word, 1> pairs.
@@ -65,15 +67,6 @@ extends Mapper<LongWritable, Text, Text, MovingOutWritable> {
         double RELATIVE_HUMIDITY_DOUBLE = Double.parseDouble(fields[NcdcConstants.RELATIVE_HUMIDITY_INDEX]);
         int RH_FLAG_INT = Integer.parseInt(fields[NcdcConstants.RH_FLAG_INDEX]);
 
-        LST_DATE.set(LST_DATE_STRING);
-        LONGITUDE.set(LONGITUDE_FLOAT);
-        LATITUDE.set(LATITUDE_FLOAT);
-        AIR_TEMPERATURE.set(AIR_TEMPERATURE_DOUBLE);
-        PRECIPITATION.set(PRECIPITATION_DOUBLE);
-        RELATIVE_HUMIDITY.set(RELATIVE_HUMIDITY_DOUBLE);
-        RH_FLAG.set(RH_FLAG_INT);
-
-        movingOutWritable.set(LST_DATE, LONGITUDE, LATITUDE, AIR_TEMPERATURE, PRECIPITATION, RELATIVE_HUMIDITY, RH_FLAG);
         if (RH_FLAG_INT == 0 && !(LONGITUDE_FLOAT == NcdcConstants.MISSING_DATA_1 ||
                 LATITUDE_FLOAT == NcdcConstants.MISSING_DATA_1 ||
                 AIR_TEMPERATURE_DOUBLE == NcdcConstants.MISSING_DATA_1 ||
@@ -85,6 +78,16 @@ extends Mapper<LongWritable, Text, Text, MovingOutWritable> {
                 PRECIPITATION_DOUBLE == NcdcConstants.MISSING_DATA_2 ||
                 RELATIVE_HUMIDITY_DOUBLE == NcdcConstants.MISSING_DATA_2)) {
             String geoHash = Geohash.encode(LONGITUDE_FLOAT, LATITUDE_FLOAT, 4);
+
+            LST_DATE.set(LST_DATE_STRING);
+            LONGITUDE.set(LONGITUDE_FLOAT);
+            LATITUDE.set(LATITUDE_FLOAT);
+            AIR_TEMPERATURE.set(AIR_TEMPERATURE_DOUBLE);
+            PRECIPITATION.set(PRECIPITATION_DOUBLE);
+            RELATIVE_HUMIDITY.set(RELATIVE_HUMIDITY_DOUBLE);
+            RH_FLAG.set(RH_FLAG_INT);
+
+            movingOutWritable.set(LST_DATE, LONGITUDE, LATITUDE, AIR_TEMPERATURE, PRECIPITATION, RELATIVE_HUMIDITY, RH_FLAG);
             context.write(new Text(geoHash), movingOutWritable);
         }
     }

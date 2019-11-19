@@ -76,7 +76,6 @@ extends Mapper<LongWritable, Text, Text, ExtremesWritable> {
         AIR_TEMPERATURE.set(AIR_TEMPERATURE_DOUBLE);
         SURFACE_TEMPERATURE.set(SURFACE_TEMPERATURE_DOUBLE);
 
-        extremesWritable.set(UTC_DATE, UTC_TIME, LONGITUDE, LATITUDE, AIR_TEMPERATURE, SURFACE_TEMPERATURE);
         if (!(LONGITUDE_DOUBLE == NcdcConstants.MISSING_DATA_1 ||
                 LATITUDE_DOUBLE == NcdcConstants.MISSING_DATA_1 ||
                 AIR_TEMPERATURE_DOUBLE == NcdcConstants.MISSING_DATA_1 ||
@@ -85,39 +84,24 @@ extends Mapper<LongWritable, Text, Text, ExtremesWritable> {
                 LATITUDE_DOUBLE == NcdcConstants.MISSING_DATA_2 ||
                 AIR_TEMPERATURE_DOUBLE == NcdcConstants.MISSING_DATA_2 ||
                 SURFACE_TEMPERATURE_DOUBLE == NcdcConstants.MISSING_DATA_2)) {
-            if (minAirTemp > AIR_TEMPERATURE_DOUBLE) {
-//                System.out.println("1 minAirTemp Mapper");
-
+            extremesWritable.set(UTC_DATE, UTC_TIME, LONGITUDE, LATITUDE, AIR_TEMPERATURE, SURFACE_TEMPERATURE);
+            if (minAirTemp > AIR_TEMPERATURE_DOUBLE && (-90 < AIR_TEMPERATURE_DOUBLE && AIR_TEMPERATURE_DOUBLE < 60)) {
                 context.write(new Text("minAirTemp"), extremesWritable);
                 minAirTemp = AIR_TEMPERATURE_DOUBLE;
             }
-
-            if (maxAirTemp < AIR_TEMPERATURE_DOUBLE) {
-//                System.out.println("2 maxAirTemp Mapper");
+            if (maxAirTemp < AIR_TEMPERATURE_DOUBLE && (-90 < AIR_TEMPERATURE_DOUBLE && AIR_TEMPERATURE_DOUBLE < 60)) {
 
                 context.write(new Text("maxAirTemp"), extremesWritable);
                 maxAirTemp = AIR_TEMPERATURE_DOUBLE;
             }
-
-            if (minSurfaceTemp > SURFACE_TEMPERATURE_DOUBLE) {
-
-//                System.out.println("3 minSurfaceTemp Mapper");
-
+            if (minSurfaceTemp > SURFACE_TEMPERATURE_DOUBLE && (-250 < SURFACE_TEMPERATURE_DOUBLE && SURFACE_TEMPERATURE_DOUBLE < 250)) {
                 context.write(new Text("minSurfaceTemp"), extremesWritable);
                 minSurfaceTemp = SURFACE_TEMPERATURE_DOUBLE;
             }
-
-            if (maxSurfaceTemp < SURFACE_TEMPERATURE_DOUBLE) {
-                if (SURFACE_TEMPERATURE_DOUBLE > 50) {
-                    System.out.println(SURFACE_TEMPERATURE_DOUBLE);
-                }
-//                System.out.println("4 maxSurfaceTemp Mapper");
-
+            if (maxSurfaceTemp < SURFACE_TEMPERATURE_DOUBLE && (-250 < SURFACE_TEMPERATURE_DOUBLE && SURFACE_TEMPERATURE_DOUBLE < 250)) {
                 context.write(new Text("maxSurfaceTemp"), extremesWritable);
                 maxSurfaceTemp = SURFACE_TEMPERATURE_DOUBLE;
-
             }
-
         }
     }
 }
