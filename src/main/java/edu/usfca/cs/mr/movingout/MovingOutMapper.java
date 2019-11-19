@@ -77,7 +77,7 @@ extends Mapper<LongWritable, Text, Text, MovingOutWritable> {
                 AIR_TEMPERATURE_DOUBLE == NcdcConstants.MISSING_DATA_2 ||
                 PRECIPITATION_DOUBLE == NcdcConstants.MISSING_DATA_2 ||
                 RELATIVE_HUMIDITY_DOUBLE == NcdcConstants.MISSING_DATA_2)) {
-            String geoHash = Geohash.encode(LONGITUDE_FLOAT, LATITUDE_FLOAT, 4);
+            String geoHash = Geohash.encode(LATITUDE_FLOAT, LONGITUDE_FLOAT, 4);
 
             LST_DATE.set(LST_DATE_STRING);
             LONGITUDE.set(LONGITUDE_FLOAT);
