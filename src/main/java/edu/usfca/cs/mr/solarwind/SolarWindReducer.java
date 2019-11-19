@@ -1,11 +1,14 @@
 package edu.usfca.cs.mr.solarwind;
 
-import edu.usfca.cs.mr.writables.ExtremesWritable;
-import org.apache.hadoop.io.DoubleWritable;
+import java.io.IOException;
+
+import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
 
-import java.io.IOException;
+import edu.usfca.cs.mr.util.NcdcConstants;
+import edu.usfca.cs.mr.util.SolarWindOutput;
+import edu.usfca.cs.mr.writables.SolarWindWritable;
 
 /**
  * Reducer: Input to the reducer is the output from the mapper. It receives
@@ -13,82 +16,65 @@ import java.io.IOException;
  * <word, total count> pairs.
  */
 public class SolarWindReducer
-extends Reducer<Text, ExtremesWritable, Text, ExtremesWritable> {
+extends Reducer<Text, SolarWindWritable, Text, SolarWindWritable> {
 
     @Override
     protected void reduce(
-            Text key, Iterable<ExtremesWritable> values, Context context)
+            Text key, Iterable<SolarWindWritable> values, Context context)
     throws IOException, InterruptedException {
-
-        String tempKey = key.toString();
-        ExtremesWritable result = null;
-        int keyNum;
-        if (tempKey.equals("minAirTemp")) {
-            keyNum = 1;
-        } else if (tempKey.equals("maxAirTemp")) {
-            keyNum = 2;
-        } else if (tempKey.equals("minSurfaceTemp")) {
-            System.out.println("minSurfaceTemp Reducer");
-            keyNum = 3;
-        } else { // if (tempKey.equals("maxSurfaceTemp")) {
-            keyNum = 4;
-        }
-        double minTemp = Double.MAX_VALUE;
-        double maxTemp = Double.MIN_VALUE;
-        double airTemp;
-        double surfaceTemp;
-        for (ExtremesWritable val : values) {
-            airTemp = Double.parseDouble(val.getAIR_TEMPERATURE().toString());
-            surfaceTemp = Double.parseDouble(val.getSURFACE_TEMPERATURE().toString());
-            if (keyNum == 1 && minTemp > airTemp) {
-                result = new ExtremesWritable();
-                result.setUTC_DATE(new Text(val.getUTC_DATE()));
-                result.setUTC_TIME(new Text(val.getUTC_TIME()));
-                result.setLONGITUDE(new DoubleWritable(Double.parseDouble(val.getLONGITUDE().toString())));
-                result.setLATITUDE(new DoubleWritable(Double.parseDouble(val.getLATITUDE().toString())));
-                result.setAIR_TEMPERATURE(new DoubleWritable(Double.parseDouble(val.getAIR_TEMPERATURE().toString())));
-                result.setSURFACE_TEMPERATURE(new DoubleWritable(Double.parseDouble(val.getSURFACE_TEMPERATURE().toString())));
-                result.setAIR_TEMPERATURE(new DoubleWritable(airTemp));
-                minTemp = airTemp;
-            } else if (keyNum == 2 && maxTemp < airTemp) {
-                result = new ExtremesWritable();
-                result.setUTC_DATE(new Text(val.getUTC_DATE()));
-                result.setUTC_TIME(new Text(val.getUTC_TIME()));
-                result.setLONGITUDE(new DoubleWritable(Double.parseDouble(val.getLONGITUDE().toString())));
-                result.setLATITUDE(new DoubleWritable(Double.parseDouble(val.getLATITUDE().toString())));
-                result.setAIR_TEMPERATURE(new DoubleWritable(Double.parseDouble(val.getAIR_TEMPERATURE().toString())));
-                result.setSURFACE_TEMPERATURE(new DoubleWritable(Double.parseDouble(val.getSURFACE_TEMPERATURE().toString())));
-                maxTemp = airTemp;
-
-            } else if (keyNum == 3 && minTemp > surfaceTemp) {
-                result = new ExtremesWritable();
-                result.setUTC_DATE(new Text(val.getUTC_DATE()));
-                result.setUTC_TIME(new Text(val.getUTC_TIME()));
-                result.setLONGITUDE(new DoubleWritable(Double.parseDouble(val.getLONGITUDE().toString())));
-                result.setLATITUDE(new DoubleWritable(Double.parseDouble(val.getLATITUDE().toString())));
-                result.setAIR_TEMPERATURE(new DoubleWritable(Double.parseDouble(val.getAIR_TEMPERATURE().toString())));
-                result.setSURFACE_TEMPERATURE(new DoubleWritable(Double.parseDouble(val.getSURFACE_TEMPERATURE().toString())));
-                minTemp = surfaceTemp;
-            } else if (keyNum == 4 && maxTemp < surfaceTemp) {
-                result = new ExtremesWritable();
-                result.setUTC_DATE(new Text(val.getUTC_DATE()));
-                result.setUTC_TIME(new Text(val.getUTC_TIME()));
-                result.setLONGITUDE(new DoubleWritable(Double.parseDouble(val.getLONGITUDE().toString())));
-                result.setLATITUDE(new DoubleWritable(Double.parseDouble(val.getLATITUDE().toString())));
-                result.setAIR_TEMPERATURE(new DoubleWritable(Double.parseDouble(val.getAIR_TEMPERATURE().toString())));
-                result.setSURFACE_TEMPERATURE(new DoubleWritable(Double.parseDouble(val.getSURFACE_TEMPERATURE().toString())));
-                result.setSURFACE_TEMPERATURE(new DoubleWritable(surfaceTemp));
-                maxTemp = surfaceTemp;
-            }
-        }
-
-        if (result != null) {
-            System.out.println("-----------------");
-            System.out.print(key.toString());
-            System.out.println(result.getAIR_TEMPERATURE());
-            System.out.println(result.getSURFACE_TEMPERATURE());
-            System.out.println("-----------------");
-            context.write(key, result);
-        }
+    	
+    	String geoHash = key.toString();
+    	SolarWindOutput solarWindOutput = new SolarWindOutput();
+    	SolarWindWritable result = new SolarWindWritable();
+    	for (SolarWindWritable val : values) {
+    		float solarRadiation = Float.parseFloat(val.getSOLAR_RADIATION().toString());
+    		int solarFlag = Integer.parseInt(val.getSR_FLAG().toString());
+    		float windSpeed = Float.parseFloat(val.getWIND_1_5().toString());
+    		int windFlag = Integer.parseInt(val.getWIND_FLAG().toString());
+    		float airTemperature = Float.parseFloat(val.getAIR_TEMPERATURE().toString());
+    		float precipitation = Float.parseFloat(val.getPRECIPITATION().toString());
+    		
+    		if(solarFlag == 0 && solarRadiation != NcdcConstants.MISSING_DATA_1 &&
+    				solarRadiation != NcdcConstants.MISSING_DATA_2 && 
+    				solarRadiation != NcdcConstants.MISSING_DATA_3) {
+    			solarWindOutput.solarRadiationSum += solarRadiation;
+    			solarWindOutput.solarRadaitionCount += 1;
+    		}
+    		
+    		if (windFlag == 0 && windSpeed != NcdcConstants.MISSING_DATA_1 &&
+    				windSpeed != NcdcConstants.MISSING_DATA_2) {
+    			solarWindOutput.windSpeedSum += windSpeed;
+    			solarWindOutput.windSpeedCount += 1;
+    		}
+    		
+    		if(airTemperature != NcdcConstants.MISSING_DATA_1 &&
+    				airTemperature != NcdcConstants.MISSING_DATA_2) {
+    			solarWindOutput.airTemperatureSum += airTemperature;
+    			solarWindOutput.airTemperatureCount += 1;
+    		}
+    		
+    		if(precipitation != NcdcConstants.MISSING_DATA_1 &&
+    				precipitation != NcdcConstants.MISSING_DATA_2) {
+    			solarWindOutput.precipitationSum += precipitation;
+    			solarWindOutput.precipitationCount += 1;
+    		}
+    	}
+    	
+    	result.setGEOHASH(new Text(geoHash));
+    	if(solarWindOutput.solarRadaitionCount!=0) {
+    		result.setSOLAR_RADIATION(new FloatWritable(solarWindOutput.solarRadiationSum/solarWindOutput.solarRadaitionCount));
+    	}
+    	if(solarWindOutput.windSpeedCount!=0) {
+    		result.setWIND_1_5(new FloatWritable(solarWindOutput.windSpeedSum/solarWindOutput.windSpeedCount));
+    	}
+    	if(solarWindOutput.airTemperatureCount!=0) {
+    		result.setAIR_TEMPERATURE(new FloatWritable(solarWindOutput.airTemperatureSum/solarWindOutput.airTemperatureCount));
+    	}
+    	if(solarWindOutput.precipitationCount!=0) {
+    		result.setPRECIPITATION(new FloatWritable(solarWindOutput.precipitationSum/solarWindOutput.precipitationCount));
+    	}
+    	if(result!=null) {
+    		context.write(key, result);
+    	}
     }
 }
