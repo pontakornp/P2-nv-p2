@@ -1,14 +1,15 @@
 package edu.usfca.cs.mr.travelstartup;
 
-import edu.usfca.cs.mr.writables.ExtremesWritable;
+import edu.usfca.cs.mr.util.Geohash;
 import edu.usfca.cs.mr.util.NcdcConstants;
-import org.apache.hadoop.io.DoubleWritable;
-import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.Text;
+import edu.usfca.cs.mr.writables.MovingOutWritable;
+import edu.usfca.cs.mr.writables.TravelStartupWritable;
+import org.apache.hadoop.io.*;
 import org.apache.hadoop.mapreduce.Mapper;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Mapper: Reads line by line, split them into words. Emit <word, 1> pairs.
@@ -41,20 +42,16 @@ import java.io.IOException;
  *    23   WIND_FLAG                      X / INT
  */
 public class TravelStartupMapper
-extends Mapper<LongWritable, Text, Text, ExtremesWritable> {
-    private ExtremesWritable extremesWritable = new ExtremesWritable();
+extends Mapper<LongWritable, Text, IntWritable, TravelStartupWritable> {
 
-    private Text UTC_DATE = new Text();
-    private Text UTC_TIME = new Text();
-    private DoubleWritable LONGITUDE = new DoubleWritable();
-    private DoubleWritable LATITUDE = new DoubleWritable();
+    private TravelStartupWritable travelStartupWritable = new TravelStartupWritable();
+
+    private Text LST_DATE = new Text();
+    private FloatWritable LONGITUDE = new FloatWritable();
+    private FloatWritable LATITUDE = new FloatWritable();
     private DoubleWritable AIR_TEMPERATURE = new DoubleWritable();
-    private DoubleWritable SURFACE_TEMPERATURE = new DoubleWritable();
-
-    private double minAirTemp = Double.MAX_VALUE;
-    private double maxAirTemp = Double.MIN_VALUE;
-    private double minSurfaceTemp = Double.MAX_VALUE;
-    private double maxSurfaceTemp = Double.MIN_VALUE;
+    private DoubleWritable RELATIVE_HUMIDITY = new DoubleWritable();
+    private IntWritable RH_FLAG = new IntWritable();
 
     @Override
     protected void map(LongWritable key, Text value, Context context)
@@ -62,66 +59,41 @@ extends Mapper<LongWritable, Text, Text, ExtremesWritable> {
         // split line into string array
         String[] fields = value.toString().split("\\s+");
 
-
-        // Comfort Index: (temperature + relative humidity)/40
-        // result should range from 0 - 10
-
-        String UTC_DATE_STRING = fields[NcdcConstants.UTC_DATE_INDEX];
-        String UTC_TIME_STRING = fields[NcdcConstants.UTC_TIME_INDEX];
-        double LONGITUDE_DOUBLE = Double.parseDouble(fields[NcdcConstants.LONGITUDE_INDEX]);
-        double LATITUDE_DOUBLE = Double.parseDouble(fields[NcdcConstants.LATITUDE_INDEX]);
+        String LST_DATE_STRING = fields[NcdcConstants.LST_DATE_INDEX];
+        float LONGITUDE_FLOAT = Float.parseFloat(fields[NcdcConstants.LONGITUDE_INDEX]);
+        float LATITUDE_FLOAT = Float.parseFloat(fields[NcdcConstants.LATITUDE_INDEX]);
         double AIR_TEMPERATURE_DOUBLE = Double.parseDouble(fields[NcdcConstants.AIR_TEMPERATURE_INDEX]);
-        double SURFACE_TEMPERATURE_DOUBLE = Double.parseDouble(fields[NcdcConstants.SURFACE_TEMPERATURE_INDEX]);
+        double RELATIVE_HUMIDITY_DOUBLE = Double.parseDouble(fields[NcdcConstants.RELATIVE_HUMIDITY_INDEX]);
+        int RH_FLAG_INT = Integer.parseInt(fields[NcdcConstants.RH_FLAG_INDEX]);
 
-        UTC_DATE.set(UTC_DATE_STRING);
-        UTC_TIME.set(UTC_TIME_STRING);
-        LONGITUDE.set(LONGITUDE_DOUBLE);
-        LATITUDE.set(LATITUDE_DOUBLE);
+        LST_DATE.set(LST_DATE_STRING);
+        LONGITUDE.set(LONGITUDE_FLOAT);
+        LATITUDE.set(LATITUDE_FLOAT);
         AIR_TEMPERATURE.set(AIR_TEMPERATURE_DOUBLE);
-        SURFACE_TEMPERATURE.set(SURFACE_TEMPERATURE_DOUBLE);
+        RELATIVE_HUMIDITY.set(RELATIVE_HUMIDITY_DOUBLE);
+        RH_FLAG.set(RH_FLAG_INT);
 
-        extremesWritable.set(UTC_DATE, UTC_TIME, LONGITUDE, LATITUDE, AIR_TEMPERATURE, SURFACE_TEMPERATURE);
-        if (!(LONGITUDE_DOUBLE == NcdcConstants.MISSING_DATA_1 ||
-                LATITUDE_DOUBLE == NcdcConstants.MISSING_DATA_1 ||
+        if (RH_FLAG_INT == 0 && !(LONGITUDE_FLOAT == NcdcConstants.MISSING_DATA_1 ||
+                LATITUDE_FLOAT == NcdcConstants.MISSING_DATA_1 ||
                 AIR_TEMPERATURE_DOUBLE == NcdcConstants.MISSING_DATA_1 ||
-                SURFACE_TEMPERATURE_DOUBLE == NcdcConstants.MISSING_DATA_1 ||
-                LONGITUDE_DOUBLE == NcdcConstants.MISSING_DATA_2 ||
-                LATITUDE_DOUBLE == NcdcConstants.MISSING_DATA_2 ||
+                RELATIVE_HUMIDITY_DOUBLE == NcdcConstants.MISSING_DATA_1 ||
+                LONGITUDE_FLOAT == NcdcConstants.MISSING_DATA_2 ||
+                LATITUDE_FLOAT == NcdcConstants.MISSING_DATA_2 ||
                 AIR_TEMPERATURE_DOUBLE == NcdcConstants.MISSING_DATA_2 ||
-                SURFACE_TEMPERATURE_DOUBLE == NcdcConstants.MISSING_DATA_2)) {
-            if (minAirTemp > AIR_TEMPERATURE_DOUBLE) {
-//                System.out.println("1 minAirTemp Mapper");
-
-                context.write(new Text("minAirTemp"), extremesWritable);
-                minAirTemp = AIR_TEMPERATURE_DOUBLE;
+                RELATIVE_HUMIDITY_DOUBLE == NcdcConstants.MISSING_DATA_2)) {
+            String geoHash = Geohash.encode(LONGITUDE_FLOAT, LATITUDE_FLOAT, 4);
+            Set<String> pickedGeoHash = new HashSet<>();
+            pickedGeoHash.add("h2jb");
+            pickedGeoHash.add("h9d3");
+            pickedGeoHash.add("hb02");
+            pickedGeoHash.add("hbh2");
+            pickedGeoHash.add("hbk3");
+            if (pickedGeoHash.contains(geoHash)) {
+                String monthNumString = LST_DATE_STRING.substring(4, 6);
+                int monthNum = Integer.parseInt(monthNumString);
+                travelStartupWritable.set(new IntWritable(monthNum), new Text(geoHash), AIR_TEMPERATURE, RELATIVE_HUMIDITY, new DoubleWritable(0));
+                context.write(new IntWritable(monthNum), travelStartupWritable);
             }
-
-            if (maxAirTemp < AIR_TEMPERATURE_DOUBLE) {
-//                System.out.println("2 maxAirTemp Mapper");
-
-                context.write(new Text("maxAirTemp"), extremesWritable);
-                maxAirTemp = AIR_TEMPERATURE_DOUBLE;
-            }
-
-            if (minSurfaceTemp > SURFACE_TEMPERATURE_DOUBLE) {
-
-//                System.out.println("3 minSurfaceTemp Mapper");
-
-                context.write(new Text("minSurfaceTemp"), extremesWritable);
-                minSurfaceTemp = SURFACE_TEMPERATURE_DOUBLE;
-            }
-
-            if (maxSurfaceTemp < SURFACE_TEMPERATURE_DOUBLE) {
-                if (SURFACE_TEMPERATURE_DOUBLE > 50) {
-                    System.out.println(SURFACE_TEMPERATURE_DOUBLE);
-                }
-//                System.out.println("4 maxSurfaceTemp Mapper");
-
-                context.write(new Text("maxSurfaceTemp"), extremesWritable);
-                maxSurfaceTemp = SURFACE_TEMPERATURE_DOUBLE;
-
-            }
-
         }
     }
 }

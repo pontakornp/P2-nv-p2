@@ -1,8 +1,10 @@
 package edu.usfca.cs.mr.travelstartup;
 
-import edu.usfca.cs.mr.writables.ExtremesWritable;
+import edu.usfca.cs.mr.writables.MovingOutWritable;
+import edu.usfca.cs.mr.writables.TravelStartupWritable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
@@ -17,7 +19,7 @@ public class TravelStartupJob {
             Configuration conf = new Configuration();
 
             /* Job Name. You'll see this in the YARN webapp */
-            Job job = Job.getInstance(conf, "extremes job");
+            Job job = Job.getInstance(conf, "travel startup job");
 
             /* Current class */
             job.setJarByClass(TravelStartupJob.class);
@@ -33,20 +35,20 @@ public class TravelStartupJob {
              * combiner is disabled here, but the following can be uncommented
              * for this particular job:
              */
-//            job.setCombinerClass(ExtremesReducer.class);
+//            job.setCombinerClass(MovingOutReducer.class);
 
             /* Reducer class */
             job.setReducerClass(TravelStartupReducer.class);
             System.out.println("setReducerClass");
 
             /* Outputs from the Mapper. */
-            job.setMapOutputKeyClass(Text.class);
-            job.setMapOutputValueClass(ExtremesWritable.class);
+            job.setMapOutputKeyClass(IntWritable.class);
+            job.setMapOutputValueClass(TravelStartupWritable.class);
             System.out.println("output from mapper");
 
             /* Outputs from the Reducer */
-            job.setOutputKeyClass(Text.class);
-            job.setOutputValueClass(ExtremesWritable.class);
+            job.setOutputKeyClass(IntWritable.class);
+            job.setOutputValueClass(TravelStartupWritable.class);
             System.out.println("output from reducer");
 
             /* Reduce tasks */
