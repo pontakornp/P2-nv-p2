@@ -52,5 +52,7 @@ public class NcdcConstants {
     public static final double MISSING_DATA_1 = -9999.0;
     public static final double MISSING_DATA_2 = -99.000;
     public static final double MISSING_DATA_3 = -99999.0;
+    public static final int MIN_DAY_TIME = 0600;
+    public static final int MAX_DAY_TIME = 1900;
 
 }
