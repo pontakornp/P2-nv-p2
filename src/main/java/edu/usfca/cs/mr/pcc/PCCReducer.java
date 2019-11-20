@@ -17,15 +17,15 @@ import edu.usfca.cs.mr.writables.RunningStatisticsND;
  */
 public class PCCReducer
 extends Reducer<NullWritable, RunningStatisticsND, NullWritable, RunningStatisticsND> {
+	private RunningStatisticsND result = new RunningStatisticsND();
 
     @Override
     protected void reduce(
     		NullWritable key, Iterable<RunningStatisticsND> values, Context context)
     throws IOException, InterruptedException {
-    	RunningStatisticsND result = new RunningStatisticsND();
-    	for (RunningStatisticsND value: values) {
-    		result.merge(value);
+    	for (RunningStatisticsND val: values) {
+    		result.merge(val);
     	}
-    	context.write(null, result);
+    	context.write(key, result);
     }
 }
