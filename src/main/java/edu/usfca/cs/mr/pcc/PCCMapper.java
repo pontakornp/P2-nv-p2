@@ -125,7 +125,6 @@ extends Mapper<LongWritable, Text, NullWritable, RunningStatisticsND> {
 	@Override
 	protected void cleanup(Mapper<LongWritable, Text, NullWritable, RunningStatisticsND>.Context context)
 			throws IOException, InterruptedException {
-//		System.out.println(runningStatisticsND.toString());
 		context.write(NullWritable.get(), runningStatisticsND);
 	}
     
