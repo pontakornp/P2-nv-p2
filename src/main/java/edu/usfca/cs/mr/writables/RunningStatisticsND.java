@@ -322,7 +322,6 @@ public class RunningStatisticsND implements Writable {
 
 	@Override
 	public String toString() {
-		
 		int len = this.min.length;
 		StringBuilder res = new StringBuilder();
 		for (int i = 0; i < len; i++) {
